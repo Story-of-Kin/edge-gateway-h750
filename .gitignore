@@ -1,0 +1,16 @@
+artifacts/
+.superpowers/
+*.uvguix.*
+*.uvgui.*
+*.bak
+*.o
+*.d
+*.crf
+*.dep
+*.axf
+*.hex
+*.map
+*.lst
+*.lnp
+__pycache__/
+config/gateway_config.local.h

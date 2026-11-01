@@ -1,0 +1,20 @@
+#include <stdio.h>
+#include <string.h>
+#include "gateway_store.h"
+#define BASE 0x01800000u
+#define SIZE 8192u
+static unsigned char flash[SIZE];static int fail_write,fail_record_read;
+static int rd(void*u,uint32_t a,void*p,uint32_t n){(void)u;if(n==256&&fail_record_read){fail_record_read=0;return -1;}if(a<BASE||a-BASE>SIZE||n>SIZE-(a-BASE))return -1;memcpy(p,flash+a-BASE,n);return 0;}
+static int wr(void*u,uint32_t a,const void*p,uint32_t n){uint32_t i;const unsigned char*d=p;(void)u;if(fail_write){fail_write--;if(!fail_write)return -1;}if(a<BASE||a-BASE>SIZE||n>SIZE-(a-BASE))return -1;for(i=0;i<n;i++)if((flash[a-BASE+i]&d[i])!=d[i])return -1;for(i=0;i<n;i++)flash[a-BASE+i]&=d[i];return 0;}
+static int er(void*u,uint32_t a){(void)u;if(a<BASE||a-BASE>SIZE-4096||a%4096)return -1;memset(flash+a-BASE,255,4096);return 0;}
+static const gw_flash_t io={rd,wr,er,0};
+#define CHECK(x) do{if(!(x)){printf("FAIL %s:%d: %s\n",__func__,__LINE__,#x);return 1;}}while(0)
+static void reset(void){memset(flash,255,sizeof(flash));fail_write=0;}
+static int cache_reboot_peek_ack(void){gw_store_t s;char p[240];uint32_t q;reset();CHECK(gw_store_open(&s,&io,BASE,SIZE,1)==0);CHECK(gw_store_append(&s,"first",5,123)==0);CHECK(gw_store_append(&s,"second",6,124)==0);CHECK(gw_store_peek(&s,p,sizeof(p),&q)==5&&strcmp(p,"first")==0);CHECK(gw_store_peek(&s,p,sizeof(p),&q)==5);CHECK(gw_store_open(&s,&io,BASE,SIZE,1)==0);CHECK(gw_store_peek(&s,p,sizeof(p),&q)==5);CHECK(gw_store_ack(&s,q+99)<0);CHECK(gw_store_ack(&s,q)==0);CHECK(gw_store_open(&s,&io,BASE,SIZE,1)==0);CHECK(gw_store_peek(&s,p,sizeof(p),&q)==6&&strcmp(p,"second")==0);return 0;}
+static int cache_full_preserves_unread(void){gw_store_t s;char p[240];uint32_t q;unsigned i;reset();CHECK(!gw_store_open(&s,&io,BASE,SIZE,1));for(i=0;i<32;i++)CHECK(!gw_store_append(&s,"a",1,i));CHECK(gw_store_append(&s,"b",1,100)<0);CHECK(gw_store_peek(&s,p,sizeof(p),&q)==1&&p[0]=='a');return 0;}
+static int torn_write_not_visible(void){gw_store_t s;char p[240];uint32_t q;reset();CHECK(!gw_store_open(&s,&io,BASE,SIZE,1));fail_write=2;CHECK(gw_store_append(&s,"torn",4,1)<0);CHECK(!gw_store_open(&s,&io,BASE,SIZE,1));CHECK(gw_store_peek(&s,p,sizeof(p),&q)==0);CHECK(!gw_store_append(&s,"good",4,2));CHECK(gw_store_peek(&s,p,sizeof(p),&q)==4&&strcmp(p,"good")==0);return 0;}
+static int bounds_and_small_output(void){gw_store_t s;char p[3]={'X','X','X'};uint32_t q;reset();CHECK(gw_store_open(&s,&io,BASE-4096,SIZE,1)<0);CHECK(gw_store_open(&s,&io,0x01fff000,8192,1)<0);CHECK(gw_store_open(&s,&io,0xfffff000,8192,1)<0);CHECK(!gw_store_open(&s,&io,BASE,SIZE,1));CHECK(!gw_store_append(&s,"hello",5,0));CHECK(gw_store_peek(&s,p,3,&q)<0&&p[0]=='X');CHECK(gw_store_append(&s,"",0,0)<0);return 0;}
+static int log_wrap_latest(void){gw_store_t s;char p[240],v[20];uint32_t t;unsigned i;reset();CHECK(!gw_store_open(&s,&io,BASE,SIZE,0));for(i=0;i<70;i++){sprintf(v,"entry %u",i);CHECK(!gw_store_append(&s,v,strlen(v),i));}CHECK(gw_store_recent(&s,0,p,sizeof(p),&t)>0&&strcmp(p,"entry 69")==0&&t==69);CHECK(!gw_store_open(&s,&io,BASE,SIZE,0));CHECK(gw_store_recent(&s,1,p,sizeof(p),&t)>0&&strcmp(p,"entry 68")==0);return 0;}
+static int recovery_read_failure(void){gw_store_t s;reset();CHECK(!gw_store_open(&s,&io,BASE,SIZE,1));CHECK(!gw_store_append(&s,"unread",6,1));fail_record_read=1;CHECK(gw_store_open(&s,&io,BASE,SIZE,1)<0);return 0;}
+static int corrupt_middle_record(void){gw_store_t s;char p[240];uint32_t q;reset();CHECK(!gw_store_open(&s,&io,BASE,SIZE,1));CHECK(!gw_store_append(&s,"one",3,1));CHECK(!gw_store_append(&s,"two",3,2));CHECK(!gw_store_append(&s,"three",5,3));flash[256+20]^=1;CHECK(!gw_store_open(&s,&io,BASE,SIZE,1));CHECK(gw_store_peek(&s,p,sizeof(p),&q)==3&&q==1);CHECK(!gw_store_ack(&s,q));CHECK(gw_store_peek(&s,p,sizeof(p),&q)==5&&q==3);return 0;}
+int main(void){int n=0;n+=cache_reboot_peek_ack();n+=cache_full_preserves_unread();n+=torn_write_not_visible();n+=bounds_and_small_output();n+=log_wrap_latest();n+=recovery_read_failure();n+=corrupt_middle_record();printf("storage: %d failed\n",n);return n?1:0;}
