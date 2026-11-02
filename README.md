@@ -4,6 +4,8 @@
 
 当前固件不填充演示测量值。没有外接 Wi-Fi 或传感器时，屏幕正常运行，显示缺失状态。真实采集、云端上报和断网补传需要连接外设后继续验收。
 
+已验证的无凭据预编译固件可从 [H750 预览版发布页](https://github.com/Story-of-Kin/edge-gateway-h750/releases/tag/v0.1.0-h750) 下载；包内含 AXF、HEX、SHA256 校验和及下载/验证记录。该版本的外部 Wi-Fi、传感器和实际触摸验收状态见下文。
+
 ## 已验证与待验证
 
 - Keil MDK 5.39 / ARM Compiler 5.06 update 6：完整重建 0 errors，23 个上游 LVGL 编译警告。
