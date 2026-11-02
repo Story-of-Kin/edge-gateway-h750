@@ -1,3 +1,6 @@
+/*
+ * 网络降级测试：模拟UART和队列，让真实网络任务运行一轮，确认Flash不可用时仍发送样本。
+ */
 /* Run the production network task for one loop with an actual AT parser. */
 #define GATEWAY_H
 #define GATEWAY_BOARD_H

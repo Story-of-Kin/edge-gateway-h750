@@ -1,3 +1,6 @@
+/*
+ * AT流测试：主动拆分/拼接数据，验证半包、粘包和二进制载荷不会被误判为AT错误。
+ */
 #include <stdio.h>
 #include <string.h>
 #include "gateway_at.h"

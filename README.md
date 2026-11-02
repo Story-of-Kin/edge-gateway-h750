@@ -21,6 +21,8 @@
 
 ## 从哪里开始
 
+学习代码可先看 [中文注释版源码阅读入口](docs/source-reading-guide.md)，按 `main.c → 任务 → 驱动/协议 → 界面 → 联网/存储` 的顺序阅读。移植核心源码已补充中文函数说明和关键步骤注释。
+
 1. 看 [采购清单](docs/shopping-list.md)，当前还需 ESP8266 AT 模块、两个 RS485 Modbus 传感器和匹配供电/连接附件。
 2. 按 [硬件与接线](docs/hardware-and-wiring.md) 接线，先让传感器单独通信，再启用 Wi-Fi。
 3. 按下面的方法构建、下载，最后按 [验收步骤](docs/verification.md) 逐项检查。

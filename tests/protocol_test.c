@@ -1,3 +1,6 @@
+/*
+ * 协议测试：用已知CRC与报文样例，检查正确输入、截断输入和容量边界。
+ */
 #include <stdio.h>
 #include <string.h>
 #include "gateway_protocol.h"

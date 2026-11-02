@@ -135,6 +135,7 @@ void usart_init(uint32_t baudrate)
  */
 void HAL_UART_MspInit(UART_HandleTypeDef *huart)
 {
+    /* 网关移植：USART2/3的引脚和时钟交由Port层初始化，USART1继续使用板厂调试串口。 */
     if(huart->Instance != USART1){ extern void gateway_uart_msp_init(UART_HandleTypeDef*); gateway_uart_msp_init(huart); return; }
 
     GPIO_InitTypeDef gpio_init_struct;
@@ -174,6 +175,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart)
  */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
+    /* 网关移植：全局HAL回调按串口分发，USART3字节进入Wi-Fi环形缓冲，避免覆盖调试串口逻辑。 */
     if(huart->Instance != USART1){ extern void gateway_uart_rx_complete(UART_HandleTypeDef*); gateway_uart_rx_complete(huart); return; }
 
     if(huart->Instance == USART1)                             /* 如果是串口1 */

@@ -1,3 +1,6 @@
+/*
+ * 存储测试：Flash模型限制位只能1变0，验证重启恢复、缓存不覆盖、掉电中断与损坏记录。
+ */
 #include <stdio.h>
 #include <string.h>
 #include "gateway_store.h"
